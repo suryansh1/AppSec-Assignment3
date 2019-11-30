@@ -9,8 +9,6 @@ from create_app import app_creator
 
 from models import User
 
-from flask_sqlalchemy import SQLAlchemy
-
 app = app_creator()
 
 bcrypt = Bcrypt()
@@ -92,7 +90,7 @@ def register():
 			db.session.commit()
 
 
-			users_dict[uname] = [pw_hash, two_fa_hash]
+			# users_dict[uname] = [pw_hash, two_fa_hash]
 
 			return " <a href=\"/login\" id=success >Registration Success, Please Login </a> <br> \
 			 <a href = \"/register\" > Register another user </a>"
@@ -121,9 +119,11 @@ def login():
 		# if uname in users_dict.keys():
 		
 		if user is not None:
-			pw_hash = users_dict[uname][0]
-			two_fa_hash = users_dict[uname][1]
-			
+			# pw_hash = users_dict[uname][0]
+			pw_hash = user.pswd_hash
+
+			# two_fa_hash = users_dict[uname][1]
+			two_fa_hash = user.two_fa_hash			
 			if bcrypt.check_password_hash(pw_hash, pword) and bcrypt.check_password_hash(two_fa_hash, two_fa) :
 			
 				session['username'] = uname
