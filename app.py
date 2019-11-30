@@ -4,41 +4,19 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField
 from wtforms.validators import InputRequired
 from flask_bcrypt import Bcrypt
-# from databases import db
-from create_app import app
+from databases import db
+from create_app import app_creator
+
+from models import User
 
 from flask_sqlalchemy import SQLAlchemy
-db = SQLAlchemy(app)
 
-
-# db = SQLAlchemy(app)
-# db.init_app(app)
-
-# with app.app_context():
-
-	# db.create_all()
+app = app_creator()
 
 bcrypt = Bcrypt()
 
 users_dict = {}
 # session['logged_in'] = False
-
-class User(db.Model):
-	user_id = db.Column(db.Integer, primary_key=True)
-	username = db.Column(db.String(20), unique=True, nullable=False)
-	# password = db.Column(db.String(20))
-	pswd_hash = db.Column(db.String(128), nullable=False)
-	# two_fa = db.Column(db.String(10), nullable=False)
-	two_fa_hash = db.Column(db.String(128), nullable=False)
-
-	def __init__(self, username, pswd_hash, two_fa_hash):
-		self.username = username
-		self.pswd_hash = pswd_hash
-		self.two_fa_hash = two_fa_hash
-
-
-	def __repr__(self):
-		return '<User  >'.format( self.username)
 
 
 class RegistrationForm(FlaskForm):
@@ -138,11 +116,11 @@ def login():
 		two_fa = request.form['two_fa']
 	
 		# Validate username, password and 2fa
-		# user = Users.query.filter_by(username=uname).first()
+		user = User.query.filter_by(username=uname).first()
 		# user = users_dict[uname]
-		if uname in users_dict.keys():
+		# if uname in users_dict.keys():
 		
-		# if user is not None:
+		if user is not None:
 			pw_hash = users_dict[uname][0]
 			two_fa_hash = users_dict[uname][1]
 			
@@ -169,6 +147,6 @@ def logout():
 if __name__ == "__main__":
 
 	# app.config['SECRET_KEY'] = "someRandomSecretKeyHahahaha"
-	db.create_all()
+	# db.create_all()
 	# print("Successfully created DB")
 	app.run(debug=True, host='127.0.0.1', port=5000)
