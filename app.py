@@ -7,14 +7,9 @@ from flask_bcrypt import Bcrypt
 # from databases import db
 from create_app import app
 
-# app = Flask(__name__)
+from flask_sqlalchemy import SQLAlchemy
+db = SQLAlchemy(app)
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# app.config.update(dict(
-#     SECRET_KEY="powerful secretkey",
-#     WTF_CSRF_SECRET_KEY="a csrf secret key"
-# ))
 
 # db = SQLAlchemy(app)
 # db.init_app(app)
@@ -28,16 +23,22 @@ bcrypt = Bcrypt()
 users_dict = {}
 # session['logged_in'] = False
 
-# class Users(db.Model):
-# 	user_id = db.Column(db.Integer, primary_key=True)
-# 	username = db.Column(db.String(20), unique=True, nullable=False)
-# 	# password = db.Column(db.String(20))
-# 	pswd_hash = db.Column(db.String(128), nullable=False)
-# 	# two_fa = db.Column(db.String(10), nullable=False)
-# 	two_fa_hash = db.Column(db.String(128), nullable=False)
+class User(db.Model):
+	user_id = db.Column(db.Integer, primary_key=True)
+	username = db.Column(db.String(20), unique=True, nullable=False)
+	# password = db.Column(db.String(20))
+	pswd_hash = db.Column(db.String(128), nullable=False)
+	# two_fa = db.Column(db.String(10), nullable=False)
+	two_fa_hash = db.Column(db.String(128), nullable=False)
 
-	# def __repr__(self):
-	# 	return '<User %r>' % self.username
+	def __init__(self, username, pswd_hash, two_fa_hash):
+		self.username = username
+		self.pswd_hash = pswd_hash
+		self.two_fa_hash = two_fa_hash
+
+
+	def __repr__(self):
+		return '<User  >'.format( self.username)
 
 
 class RegistrationForm(FlaskForm):
@@ -108,6 +109,11 @@ def register():
 			pw_hash = bcrypt.generate_password_hash(pword, 12)
 			two_fa_hash = bcrypt.generate_password_hash(two_fa, 12)
 
+			newUser = User(uname, pw_hash, two_fa_hash)
+			db.session.add(newUser)
+			db.session.commit()
+
+
 			users_dict[uname] = [pw_hash, two_fa_hash]
 
 			return " <a href=\"/login\" id=success >Registration Success, Please Login </a> <br> \
@@ -163,5 +169,6 @@ def logout():
 if __name__ == "__main__":
 
 	# app.config['SECRET_KEY'] = "someRandomSecretKeyHahahaha"
+	db.create_all()
 	# print("Successfully created DB")
 	app.run(debug=True, host='127.0.0.1', port=5000)
