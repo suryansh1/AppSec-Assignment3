@@ -6,14 +6,15 @@ from wtforms.validators import InputRequired
 from flask_bcrypt import Bcrypt
 from databases import db
 from create_app import app_creator
+from models import User, Spell_Query, Login_Event
+from datetime import datetime
 
-from models import User
 
 app = app_creator()
 
 bcrypt = Bcrypt()
 
-users_dict = {}
+# users_dict = {}
 # session['logged_in'] = False
 
 
@@ -39,9 +40,11 @@ def spell_check():
 	
 	if 'username' not in session:
 	# if not session.get('logged_in'):
+
 		return redirect(url_for('login'))
 
 	else:
+		# print(session.get('username') + " is logged in.")
 
 		form = SpellCheckForm()
 
@@ -61,6 +64,13 @@ def spell_check():
 			print(processed_output)
 
 			os.remove("test.txt")
+
+			user = User.query.filter_by(username = session['username']).first()
+
+			newSpellQuery = Spell_Query(query_text = inputtext, query_result = processed_output,
+											user_id = user.id)
+			db.session.add(newSpellQuery)
+			db.session.commit()
 
 			return "<p id=textout>" + inputtext + "</p> </br> <p id=misspelled>" + processed_output\
 					+"</p>"
@@ -85,7 +95,9 @@ def register():
 			pw_hash = bcrypt.generate_password_hash(pword, 12)
 			two_fa_hash = bcrypt.generate_password_hash(two_fa, 12)
 
-			newUser = User(uname, pw_hash, two_fa_hash)
+			newUser = User(username = uname, pswd_hash = pw_hash, 
+						two_fa_hash = two_fa_hash)
+
 			db.session.add(newUser)
 			db.session.commit()
 
@@ -127,6 +139,12 @@ def login():
 			if bcrypt.check_password_hash(pw_hash, pword) and bcrypt.check_password_hash(two_fa_hash, two_fa) :
 			
 				session['username'] = uname
+
+				# Retrieve time and add to logs DB
+				newLoginEvent = Login_Event(user_id = user.id)
+				db.session.add(newLoginEvent)
+				db.session.commit()
+
 				return " <a href=\"/spell_check\" id=result >Login Success </a>"
 
 			else:
@@ -140,6 +158,21 @@ def login():
 @app.route("/logout")
 def logout():
 	# session['logged_in'] = False
+
+	if 'username' not in session:
+		return home()
+
+	user = User.query.filter_by(username=session['username']).first()
+	
+	# latestLoginEvent = Login_Event.query.filter_by(user_id = user.id).order_by(Login_Event.id.desc()).first()
+	latestLoginEvent = Login_Event.query.filter_by(user_id = user.id).order_by(Login_Event.id.desc()).first()
+	latestLoginEvent.logout_timestamp = datetime.now()
+	print("Logging out " + str(user.username))
+	
+	# print(str(latestLoginEvent.login_timestamp))
+	# print(str(latestLoginEvent.logout_timestamp))
+
+	db.session.commit()
 	session.pop('username', None)
 
 	return home()
@@ -150,3 +183,4 @@ if __name__ == "__main__":
 	# db.create_all()
 	# print("Successfully created DB")
 	app.run(debug=True, host='127.0.0.1', port=5000)
+
