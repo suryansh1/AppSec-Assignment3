@@ -34,6 +34,9 @@ class SpellCheckForm(FlaskForm):
 class LoginHistoryForm(FlaskForm):
 	userid = StringField("userid", id = "userid")
 
+class HistoryAdminForm(FlaskForm):
+	uname = StringField('uname', id='userquery')
+
 @app.route("/")
 def home():
 	return redirect(url_for('spell_check'))
@@ -168,8 +171,11 @@ def logout():
 
 	user = User.query.filter_by(username=session['username']).first()
 	
+	
 	# latestLoginEvent = Login_Event.query.filter_by(user_id = user.id).order_by(Login_Event.id.desc()).first()
 	latestLoginEvent = Login_Event.query.filter_by(user_id = user.id).order_by(Login_Event.id.desc()).first()
+	
+
 	latestLoginEvent.logout_timestamp = datetime.now()
 	print("Logging out " + str(user.username))
 	
@@ -198,6 +204,7 @@ def login_history():
 		if user is not None:
 			extractedLoginEvents = user.login_events.all()
 		
+
 			print(extractedLoginEvents)
 
 			return render_template('login_history.html', form=form, user=user,
@@ -205,6 +212,29 @@ def login_history():
 
 	return render_template('login_history.html', form=form)	
 
+
+
+@app.route("/history", methods=['POST', 'GET'])
+def history():
+
+	if 'username' not in session:
+		return redirect(url_for('login'))
+
+	if session['username'] == 'admin':
+
+		form = HistoryAdminForm()
+		if request.method == 'POST' :
+			user = User.query.filter_by(username=request.form['uname']).first()
+			extractedSpellQueries = user.spell_queries.all()
+			return render_template('history-admin.html', form=form, user=user,
+				numqueries=len(extractedSpellQueries), spell_queries=extractedSpellQueries)
+		else:
+			return render_template('history-admin.html', form=form)
+	else:
+		user = User.query.filter_by(username=session['username']).first()
+		extractedSpellQueries = user.spell_queries.all()
+		return render_template('history.html', user=user,
+			 numqueries=len(extractedSpellQueries), spell_queries=extractedSpellQueries)
 if __name__ == "__main__":
 
 	# app.config['SECRET_KEY'] = "someRandomSecretKeyHahahaha"
