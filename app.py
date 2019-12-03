@@ -31,6 +31,9 @@ class LoginForm(FlaskForm):
 class SpellCheckForm(FlaskForm):
 	inputtext = TextAreaField("inputtext")
 
+class LoginHistoryForm(FlaskForm):
+	userid = StringField("userid", id = "userid")
+
 @app.route("/")
 def home():
 	return redirect(url_for('spell_check'))
@@ -89,7 +92,8 @@ def register():
 		pword = request.form['pword']
 		two_fa = request.form['two_fa']
 
-		if len(uname) < 20 and  len(pword)<20 and len(two_fa) < 20:
+		if (len(uname) > 0 and  len(pword) > 0 and len(two_fa) > 0 and 
+		len(uname) < 20 and  len(pword)<20 and len(two_fa) < 20):
 
 			# Encrypt password and 2fa, store in dict
 			pw_hash = bcrypt.generate_password_hash(pword, 12)
@@ -155,7 +159,7 @@ def login():
 	return render_template('login.html', form=form)
 
 
-@app.route("/logout")
+@app.route("/logout", methods=['POST', 'GET'])
 def logout():
 	# session['logged_in'] = False
 
@@ -176,6 +180,30 @@ def logout():
 	session.pop('username', None)
 
 	return home()
+
+@app.route("/login_history", methods=['POST', 'GET'])
+def login_history():
+	if 'username' not in session:
+		return redirect(url_for('login'))
+
+	if session['username'] != "admin":
+		return redirect(url_for('login'))
+
+	form = LoginHistoryForm()
+
+	if request.method == 'POST':
+
+		user = User.query.filter_by(username=request.form['userid']).first()
+
+		if user is not None:
+			extractedLoginEvents = user.login_events.all()
+		
+			print(extractedLoginEvents)
+
+			return render_template('login_history.html', form=form, user=user,
+									login_events=extractedLoginEvents)
+
+	return render_template('login_history.html', form=form)	
 
 if __name__ == "__main__":
 
