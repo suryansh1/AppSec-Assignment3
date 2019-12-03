@@ -248,7 +248,9 @@ def history_query(query):
 
 	user = User.query.filter_by(username=loggedin_username).first()
 
-	query_id = re.findall('\d+', query)[0]
+	# query_id = re.findall('\d+', query)[0]
+	# query_id = [int(s) for s in query.split() if s.isdigit()][0]
+	query_id = ''.join([n for n in query if n.isdigit()])
 
 	print("Query ID : " + query_id)
 	
