@@ -240,7 +240,7 @@ def history():
 
 @app.route('/history/<query>', methods=['GET'])
 def history_query(query):
-	
+
 	if 'username' not in session:
 		return redirect(url_for('login'))
 
@@ -251,15 +251,27 @@ def history_query(query):
 	query_id = re.findall('\d+', query)[0]
 
 	print("Query ID : " + query_id)
+	
+	is_allowed = False
 
 	if loggedin_username == "admin":
+		is_allowed = True		
 		extractedSpellQuery = Spell_Query.query.filter_by(id=query_id).first()
 
 	else : 
-		extractedSpellQuery = Spell_Query.query.filter_by(id=query_id, user_id=user.id).first()
 
-	if extractedSpellQuery is None:
-		return " <a href=\"/login\" id=result >Not Authorized </a>"
+		extractedSpellQueries = user.spell_queries.all()
+
+		for spell_query in extractedSpellQueries:
+			if query_id == spell_query.id:
+				is_allowed = True
+
+				extractedSpellQuery = spell_query
+		
+		# extractedSpellQuery = Spell_Query.query.filter_by(id=query_id, user_id=user.id).first()
+
+	if not is_allowed:
+		return " <a href=\"/login\" id=result >You are not allowed to view this query</a>"
 
 	return render_template('history_query.html',
 				 spell_query=extractedSpellQuery)
