@@ -1,5 +1,5 @@
 from flask import Flask, redirect, render_template, request, session, abort, url_for
-import os, subprocess
+import os, subprocess, re
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, TextAreaField
 from wtforms.validators import InputRequired
@@ -35,7 +35,7 @@ class LoginHistoryForm(FlaskForm):
 	userid = StringField("userid", id = "userid")
 
 class HistoryAdminForm(FlaskForm):
-	uname = StringField('uname', id='userquery')
+	uname = StringField('username', id='userquery')
 
 @app.route("/")
 def home():
@@ -227,14 +227,44 @@ def history():
 			user = User.query.filter_by(username=request.form['uname']).first()
 			extractedSpellQueries = user.spell_queries.all()
 			return render_template('history-admin.html', form=form, user=user,
-				numqueries=len(extractedSpellQueries), spell_queries=extractedSpellQueries)
+								numqueries=len(extractedSpellQueries), 
+								spell_queries=extractedSpellQueries)
 		else:
 			return render_template('history-admin.html', form=form)
 	else:
 		user = User.query.filter_by(username=session['username']).first()
 		extractedSpellQueries = user.spell_queries.all()
 		return render_template('history.html', user=user,
-			 numqueries=len(extractedSpellQueries), spell_queries=extractedSpellQueries)
+			 numqueries=len(extractedSpellQueries),
+			  spell_queries=extractedSpellQueries)
+
+@app.route('/history/<query>', methods=['GET'])
+def history_query(query):
+	
+	if 'username' not in session:
+		return redirect(url_for('login'))
+
+	loggedin_username = session['username']
+
+	user = User.query.filter_by(username=loggedin_username).first()
+
+	query_id = re.findall('\d+', query)[0]
+
+	print("Query ID : " + query_id)
+
+	if loggedin_username == "admin":
+		extractedSpellQuery = Spell_Query.query.filter_by(id=query_id).first()
+
+	else : 
+		extractedSpellQuery = Spell_Query.query.filter_by(id=query_id, user_id=user.id).first()
+
+	if extractedSpellQuery is None:
+		return " <a href=\"/login\" id=result >Not Authorized </a>"
+
+	return render_template('history_query.html',
+				 spell_query=extractedSpellQuery)
+
+
 if __name__ == "__main__":
 
 	# app.config['SECRET_KEY'] = "someRandomSecretKeyHahahaha"
