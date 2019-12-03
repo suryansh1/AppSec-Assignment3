@@ -260,17 +260,18 @@ def history_query(query):
 
 	else : 
 
-		extractedSpellQueries = user.spell_queries.all()
+		# extractedSpellQueries = user.spell_queries.all()
 
-		for spell_query in extractedSpellQueries:
-			if query_id == spell_query.id:
-				is_allowed = True
+		# for spell_query in extractedSpellQueries:
+		# 	if query_id == spell_query.id:
+		# 		is_allowed = True
 
-				extractedSpellQuery = spell_query
+		# 		extractedSpellQuery = spell_query
 		
-		# extractedSpellQuery = Spell_Query.query.filter_by(id=query_id, user_id=user.id).first()
+		extractedSpellQuery = Spell_Query.query.filter_by(id=query_id, user_id=user.id).first()
 
-	if not is_allowed:
+	# if not is_allowed:
+	if extractedSpellQuery is None:
 		return " <a href=\"/login\" id=result >You are not allowed to view this query</a>"
 
 	return render_template('history_query.html',
